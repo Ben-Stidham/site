@@ -1,11 +1,13 @@
 <script setup lang="ts">
     import { ref, onMounted, onUnmounted, nextTick, computed, ComputedRef } from "vue";
     import ScreenDiv from "./ScreenDiv.vue";
+    import init, { process_command } from "../rust/r_sys/pkg/r_sys";
 
     const username = ref("user");
     const dir = ref("/home");
 
-    onMounted(() => {
+    onMounted(async () => {
+        await init();
         window.addEventListener('keydown', keyInput);
     });
 
@@ -18,8 +20,12 @@
     const terminal_input = ref("");
     const mainWindow = ref<HTMLElement | null>(null);
 
-    const process_command = async () => {
-        terminal_output.value.push(terminal_input.value);
+    const set_output = (output: string) => {
+        terminal_output.value = output.split("\n");
+    }
+
+    const process_commands = async () => {
+        terminal_output.value = process_command(terminal_input.value, terminal_output.value);
         terminal_input.value = "";
         
         await nextTick();
@@ -48,7 +54,7 @@
         } else{
             switch(keypress.key) {
                 case "Enter":
-                    process_command();
+                    process_commands();
                     break;
                 case "ArrowLeft":
                     if(cursor_position.value > 0){
@@ -90,8 +96,8 @@
                     {{ prompt }}
                 </span>
                 <span>{{ pre_cursor_text }}</span>
-                <span v-if="cursor_position < terminal_input.length" class="bg-(color:--magenta2)">{{ cursor_char }}</span>
-                <span v-else class="bg-(color:--magenta2)">&nbsp;</span>
+                <span v-if="cursor_position < terminal_input.length" class="bg-(color:--teal) text-(--bg)">{{ cursor_char }}</span>
+                <span v-else class="bg-(color:--teal)">&nbsp;</span>
                 <span>{{ post_cursor_text }}</span>
             </div>
         </div>
